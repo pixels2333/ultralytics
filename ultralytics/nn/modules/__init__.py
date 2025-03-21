@@ -76,7 +76,6 @@ from .conv import (
     LightConv,
     RepConv,
     SpatialAttention,
-    DCNv4,
     DepthwiseSeparableConv,
 
 )
@@ -167,5 +166,5 @@ __all__ = (
     "TorchVision",
     "Index",
     "A2C2f",
-    "DCNv4",
+    
 )

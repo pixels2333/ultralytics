@@ -63,7 +63,6 @@ from ultralytics.nn.modules import (
     TorchVision,
     WorldDetect,
     v10Detect,
-    DCNv4,
     CBAM,
     ECA_Layer,
     DepthwiseSeparableConv,

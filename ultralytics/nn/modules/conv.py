@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from ..DCNv4_op.DCNv4.modules.dcnv4 import DCNv4
 
 __all__ = (
     "Conv",
@@ -23,7 +22,6 @@ __all__ = (
     "Concat",
     "RepConv",
     "Index",
-    "DCNv4",
     "DepthwiseSeparableConv",
 )
 
