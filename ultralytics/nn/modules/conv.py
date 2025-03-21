@@ -2,10 +2,10 @@
 """Convolution modules."""
 
 import math
-
-import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
 from ..DCNv4_op.DCNv4.modules.dcnv4 import DCNv4
 
 __all__ = (
@@ -30,7 +30,8 @@ __all__ = (
 def autopad(k, p=None, d=1):  # kernel, padding, dilation
     """Pad to 'same' shape outputs."""
     if d > 1:
-        k = d * (k - 1) + 1 if isinstance(k, int) else [d * (x - 1) + 1 for x in k]  # actual kernel-size
+        k = d * (k - 1) + 1 if isinstance(k,
+                                          int) else [d * (x - 1) + 1 for x in k]  # actual kernel-size
     if p is None:
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
     return p
@@ -64,9 +65,11 @@ class Conv(nn.Module):
             act (bool | nn.Module): Activation function.
         """
         super().__init__()
-        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p, d), groups=g, dilation=d, bias=False)
+        self.conv = nn.Conv2d(c1, c2, k, s, autopad(
+            k, p, d), groups=g, dilation=d, bias=False)
         self.bn = nn.BatchNorm2d(c2)
-        self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
+        self.act = self.default_act if act is True else act if isinstance(
+            act, nn.Module) else nn.Identity()
 
     def forward(self, x):
         """
@@ -119,7 +122,8 @@ class Conv2(Conv):
             act (bool | nn.Module): Activation function.
         """
         super().__init__(c1, c2, k, s, p, g=g, d=d, act=act)
-        self.cv2 = nn.Conv2d(c1, c2, 1, s, autopad(1, p, d), groups=g, dilation=d, bias=False)  # add 1x1 conv
+        self.cv2 = nn.Conv2d(c1, c2, 1, s, autopad(
+            1, p, d), groups=g, dilation=d, bias=False)  # add 1x1 conv
 
     def forward(self, x):
         """
@@ -149,10 +153,56 @@ class Conv2(Conv):
         """Fuse parallel convolutions."""
         w = torch.zeros_like(self.conv.weight.data)
         i = [x // 2 for x in w.shape[2:]]
-        w[:, :, i[0] : i[0] + 1, i[1] : i[1] + 1] = self.cv2.weight.data.clone()
+        w[:, :, i[0]: i[0] + 1, i[1]: i[1] + 1] = self.cv2.weight.data.clone()
         self.conv.weight.data += w
         self.__delattr__("cv2")
         self.forward = self.forward_fuse
+
+
+class DepthwiseSeparableConv(nn.Module):
+    """深度可分离卷积模块。
+    这个模块实现了深度可分离卷积,它将标准卷积分解为两步:
+    1. 深度卷积(Depthwise convolution): 对每个输入通道单独进行空间卷积
+    2. 逐点卷积(Pointwise convolution): 使用1x1卷积调整通道数
+    相比标准卷积,这种结构可以显著减少参数量和计算量,同时保持类似的性能。
+    参数:
+        in_channels (int): 输入特征图的通道数
+        out_channels (int): 输出特征图的通道数  
+        stride (int, optional): 卷积步长。默认为1
+    形状:
+        - 输入: (N, C_in, H_in, W_in)
+        - 输出: (N, C_out, H_out, W_out)
+        其中:
+            H_out = (H_in - 1) // 2 + 1 (当stride=2时)
+            W_out = (W_in - 1) // 2 + 1 (当stride=2时)
+    """
+    "Depthwise conv + Pointwise conv"
+
+    def __init__(self, in_channels, out_channels, stride=1):
+        # 初始化深度可分离卷积层,设置输入通道数、输出通道数和步长
+
+        super(DepthwiseSeparableConv, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=3,
+                               stride=2, padding=1, groups=in_channels, bias=False)  # 深度卷积层:对每个通道单独进行3x3卷积
+        self.bn1 = nn.BatchNorm2d(in_channels)  # 第一个批归一化层:对深度卷积的输出进行归一化
+        self.conv2 = nn.Conv2d(in_channels, out_channels,
+                               kernel_size=1, stride=1, padding=0, bias=False)  # 逐点卷积层:使用1x1卷积调整通道数
+        self.bn2 = nn.BatchNorm2d(out_channels)  # 第二个批归一化层:对逐点卷积的输出进行归一化
+
+    def forward(self, x):
+        x = self.conv1(x)  # 应用深度卷积
+        x = self.bn1(x)    # 应用第一个批归一化
+        x = F.relu(x)      # 应用ReLU激活函数
+        x = self.conv2(x)  # 应用逐点卷积
+        x = self.bn2(x)    # 应用第二个批归一化
+        x = F.relu(x)      # 应用ReLU激活函数
+        return x           # 返回处理后的特征图
+
+
+# input = torch.randn(32, 3, 224, 224)
+# block = Block(3, 64)
+# out = block(input)
+# print(out.size())
 
 
 class LightConv(nn.Module):
@@ -258,7 +308,8 @@ class ConvTranspose(nn.Module):
         super().__init__()
         self.conv_transpose = nn.ConvTranspose2d(c1, c2, k, s, p, bias=not bn)
         self.bn = nn.BatchNorm2d(c2) if bn else nn.Identity()
-        self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
+        self.act = self.default_act if act is True else act if isinstance(
+            act, nn.Module) else nn.Identity()
 
     def forward(self, x):
         """
@@ -413,9 +464,11 @@ class RepConv(nn.Module):
         self.g = g
         self.c1 = c1
         self.c2 = c2
-        self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
+        self.act = self.default_act if act is True else act if isinstance(
+            act, nn.Module) else nn.Identity()
 
-        self.bn = nn.BatchNorm2d(num_features=c1) if bn and c2 == c1 and s == 1 else None
+        self.bn = nn.BatchNorm2d(
+            num_features=c1) if bn and c2 == c1 and s == 1 else None
         self.conv1 = Conv(c1, c2, k, s, p=p, g=g, act=False)
         self.conv2 = Conv(c1, c2, 1, s, p=(p - k // 2), g=g, act=False)
 
@@ -498,10 +551,12 @@ class RepConv(nn.Module):
         elif isinstance(branch, nn.BatchNorm2d):
             if not hasattr(self, "id_tensor"):
                 input_dim = self.c1 // self.g
-                kernel_value = np.zeros((self.c1, input_dim, 3, 3), dtype=np.float32)
+                kernel_value = np.zeros(
+                    (self.c1, input_dim, 3, 3), dtype=np.float32)
                 for i in range(self.c1):
                     kernel_value[i, i % input_dim, 1, 1] = 1
-                self.id_tensor = torch.from_numpy(kernel_value).to(branch.weight.device)
+                self.id_tensor = torch.from_numpy(
+                    kernel_value).to(branch.weight.device)
             kernel = self.id_tensor
             running_mean = branch.running_mean
             running_var = branch.running_var

@@ -1,50 +1,37 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# Ultralytics YOLO11-cls image classification model
-# Model docs: https://docs.ultralytics.com/models/yolo11
-# Task docs: https://docs.ultralytics.com/tasks/classify
+# 番茄叶片分类模型配置
+# 基于YOLO11架构，添加了注意力机制和高级卷积模块
 
-# Parameters
-nc: 1000 # number of classes
-scales: # model compound scaling constants, i.e. 'model=yolo11n-cls.yaml' will call yolo11-cls.yaml with scale 'n'
+# 参数设置
+nc: 10  # 番茄分类的类别数量
+scales:  # 模型复合缩放常数
   # [depth, width, max_channels]
-  n: [0.50, 0.25, 1024] # summary: 86 layers, 1633584 parameters, 1633584 gradients, 0.5 GFLOPs
-  s: [0.50, 0.50, 1024] # summary: 86 layers, 5545488 parameters, 5545488 gradients, 1.6 GFLOPs
-  m: [0.50, 1.00, 512] # summary: 106 layers, 10455696 parameters, 10455696 gradients, 5.0 GFLOPs
-  l: [1.00, 1.00, 512] # summary: 176 layers, 12937104 parameters, 12937104 gradients, 6.2 GFLOPs
-  x: [1.00, 1.50, 512] # summary: 176 layers, 28458544 parameters, 28458544 gradients, 13.7 GFLOPs
+  n: [0.50, 0.25, 1024]  # 轻量级模型
+  s: [0.50, 0.50, 1024]  # 小型模型
+  m: [0.67, 0.75, 768]   # 中型模型
+  l: [1.00, 1.00, 512]   # 大型模型
 
-
-# backbone:
-#最终方案
-  # # [from, repeats, module, args]
-  # - [-1, 1, Conv, [32, 3, 2]]  # 标准卷积
-  # - [-1, 1, DepthwiseSeparableConv, [64, 3, 1]]  # 深度可分离卷积
-  # - [-1, 2, C3k2, [128, False, 0.25]]  # 保留原有的C3k2模块
-  # - [-1, 1, DilatedConv, [128, 3, 2, 2]]  # 空洞卷积，dilation=2
-  # - [-1, 2, C3k2, [256, False, 0.25]]
-  # - [-1, 1, GroupConv, [256, 3, 2, 32]]  # 组卷积，32个组
-  # - [-1, 2, C3k2, [256, True]]
-  # - [-1, 1, SEModule, [256]]  # Squeeze-and-Excitation模块
-  # - [-1, 1, DCNv4, [512, 3, 2]]  # 可变形卷积
-  # - [-1, 2, C3k2, [512, True]]
-  # - [-1, 1, SPPF, [512, 5]]  # 空间金字塔池化
-
-# YOLO11n backbone
+# 主干网络
 backbone:
   # [from, repeats, module, args]
-  - [-1, 1, Conv, [64, 3, 2]] # 0-P1/2
-  - [-1, 1, Conv, [128, 3, 2]] # 1-P2/4
-  - [-1, 2, C3k2, [256, False, 0.25]]
-  - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8
-  - [-1, 2, C3k2, [512, False, 0.25]]
-  - [-1, 1, Conv, [512, 3, 2]] # 5-P4/16
-  - [-1, 2, C3k2, [512, True]]
-  - [-1, 1, DCNv4, [1024, 3, 2]] # 7-P5/32 with DCNv4
-  - [-1, 2, C3k2, [1024, True]]
-  - [-1, 2, C2PSA, [1024]] # 9
+  - [-1, 1, Conv, [64, 3, 2]]  # 0-P1/2: 标准卷积层
+  - [-1, 1, DepthwiseSeparableConv, [128, 3, 2]]  # 1-P2/4: 深度可分离卷积，减少参数量
+  - [-1, 2, C3k2, [256, False, 0.25]]  # 2: 轻量级C3模块
+  - [-1, 1, SELayer, [256]]  # 3: 添加SE注意力机制，增强特征表达
+  - [-1, 1, Conv, [256, 3, 2]]  # 4-P3/8: 下采样
+  - [-1, 2, C3k2, [384, False, 0.25]]  # 5: 增加通道数
+  - [-1, 1, CBAM, [384]]  # 6: 卷积注意力模块，同时关注通道和空间维度
+  # - [-1, 1, DilatedConv, [384, 3, 2, 2]]  # 7-P4/16: 空洞卷积，增大感受野
+  - [-1, 2, C3k2, [512, True]]  # 8: 标准C3模块
+  - [-1, 1, ECAModule, [512]]  # 9: 高效通道注意力
+  - [-1, 1, Conv, [768, 3, 2]]  # 10-P5/32: 最终下采样
+  - [-1, 2, C3k2, [768, True]]  # 11: 深层特征提取
+  - [-1, 1, SPPF, [768, 5]]  # 12: 空间金字塔池化，捕获多尺度信息
 
-
-# YOLO11n head
+# 分类头部
 head:
-  - [-1, 1, Classify, [nc]] # Classify
+  - [-1, 1, nn.AdaptiveAvgPool2d, [1]]  # 13: 自适应平均池化到1x1
+  - [-1, 1, nn.Flatten, []]  # 14: 展平特征
+  - [-1, 1, nn.Dropout, [0.2]]  # 15: 添加Dropout防止过拟合
+  - [-1, 1, nn.Linear, [nc]]  # 16: 分类层
