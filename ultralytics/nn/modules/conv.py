@@ -24,6 +24,7 @@ __all__ = (
     "RepConv",
     "Index",
     "DCNv4",
+    "DepthwiseSeparableConv",
 )
 
 

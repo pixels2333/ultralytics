@@ -58,6 +58,8 @@ from .block import (
     ResNetLayer,
     SCDown,
     TorchVision,
+    ECA_Layer,
+    SELayer,
 )
 from .conv import (
     CBAM,
@@ -75,6 +77,8 @@ from .conv import (
     RepConv,
     SpatialAttention,
     DCNv4,
+    DepthwiseSeparableConv,
+
 )
 from .head import OBB, Classify, Detect, Pose, RTDETRDecoder, Segment, WorldDetect, v10Detect
 from .transformer import (

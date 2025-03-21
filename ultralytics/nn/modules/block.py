@@ -52,6 +52,7 @@ __all__ = (
     "PSA",
     "SCDown",
     "TorchVision",
+    "ECA_Layer",
 )
 
 
@@ -1572,7 +1573,7 @@ class SELayer(nn.Module):
         return x * y.expand_as(x)
 
 
-class eca_layer(nn.Module):
+class ECA_Layer(nn.Module):
     """     
     ECA模块(Efficient Channel Attention Module)的构造函数。
     该模块通过自适应平均池化(Adaptive Average Pooling)来提取全局空间信息，并通过卷积操作对通道进行加权，增强网络对不同通道的注意力。
@@ -1589,7 +1590,7 @@ class eca_layer(nn.Module):
     """
 
     def __init__(self, channel, k_size=3):
-        super(eca_layer, self).__init__()
+        super(ECA_Layer, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.conv = nn.Conv1d(1, 1, kernel_size=k_size,
                               padding=(k_size - 1) // 2, bias=False)
