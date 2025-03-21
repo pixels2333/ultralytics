@@ -16,7 +16,7 @@ scales:  # 模型复合缩放常数
 backbone:
   # [from, repeats, module, args]
   - [-1, 1, Conv, [32, 3, 2]]  # 0-P1/2: 标准卷积层
-  - [-1, 1, DepthwiseSeparableConv, [64, 3, 2]]  # 1-P2/4: 深度可分离卷积，减少参数量
+  - [-1, 1, DepthwiseSeparableConv, [32, 3, 2]]  # 1-P2/4: 深度可分离卷积，减少参数量
   - [-1, 2, C3k2, [128, False, 0.25]]  # 2: 轻量级C3模块
   - [-1, 1, SELayer, [128]]  # 3: 添加SE注意力机制，增强特征表达
   - [-1, 1, Conv, [128, 3, 2]]  # 4-P3/8: 下采样
