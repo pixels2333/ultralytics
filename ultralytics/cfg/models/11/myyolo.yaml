@@ -34,4 +34,5 @@ head:
   - [-1, 1, nn.AdaptiveAvgPool2d, [1]]  # 13: 自适应平均池化到1x1
   - [-1, 1, nn.Flatten, []]  # 14: 展平特征
   - [-1, 1, nn.Dropout, [0.2]]  # 15: 添加Dropout防止过拟合
-  - [-1, 1, nn.Linear, [nc]]  # 16: 分类层
+  - [-1, 1, Classify, [nc]] # Classify
+  
