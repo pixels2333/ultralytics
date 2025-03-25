@@ -177,16 +177,16 @@ class DepthwiseSeparableConv(nn.Module):
     """
     "Depthwise conv + Pointwise conv"
 
-    def __init__(self, in_channels, out_channels, stride=1):
+    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, d=1, act=True):
         # 初始化深度可分离卷积层,设置输入通道数、输出通道数和步长
 
         super(DepthwiseSeparableConv, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=3,
-                               stride=2, padding=1, groups=in_channels, bias=False)  # 深度卷积层:对每个通道单独进行3x3卷积
-        self.bn1 = nn.BatchNorm2d(in_channels)  # 第一个批归一化层:对深度卷积的输出进行归一化
-        self.conv2 = nn.Conv2d(in_channels, out_channels,
-                               kernel_size=1, stride=1, padding=0, bias=False)  # 逐点卷积层:使用1x1卷积调整通道数
-        self.bn2 = nn.BatchNorm2d(out_channels)  # 第二个批归一化层:对逐点卷积的输出进行归一化
+        self.conv1 = nn.Conv2d(c1, c2, 1, s, autopad(
+            1, p, d), groups=g, dilation=d, bias=False)  # 深度卷积层:对每个通道单独进行3x3卷积
+        self.bn1 = nn.BatchNorm2d(c1)  # 第一个批归一化层:对深度卷积的输出进行归一化
+        self.conv2 = nn.Conv2d(c1, c2, 1, s, autopad(
+            1, p, d), groups=g, dilation=d, bias=False)  # 逐点卷积层:使用1x1卷积调整通道数
+        self.bn2 = nn.BatchNorm2d(c2)  # 第二个批归一化层:对逐点卷积的输出进行归一化
 
     def forward(self, x):
         x = self.conv1(x)  # 应用深度卷积
