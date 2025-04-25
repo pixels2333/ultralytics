@@ -182,10 +182,9 @@ class DepthwiseSeparableConv(nn.Module):
 
         super(DepthwiseSeparableConv, self).__init__()
         self.conv1 = nn.Conv2d(c1, c2, 1, s, autopad(
-            1, p, d), groups=g, dilation=d, bias=False)  # 深度卷积层:对每个通道单独进行3x3卷积
+            1, p, d), groups=c1, dilation=d, bias=False)  # 深度卷积层:对每个通道单独进行3x3卷积
         self.bn1 = nn.BatchNorm2d(c1)  # 第一个批归一化层:对深度卷积的输出进行归一化
-        self.conv2 = nn.Conv2d(c1, c2, 1, s, autopad(
-            1, p, d), groups=g, dilation=d, bias=False)  # 逐点卷积层:使用1x1卷积调整通道数
+        self.conv2 = nn.Conv2d(c1, c2, 1, 1, 0, bias=False)  # 逐点卷积层:使用1x1卷积调整通道数
         self.bn2 = nn.BatchNorm2d(c2)  # 第二个批归一化层:对逐点卷积的输出进行归一化
 
     def forward(self, x):
