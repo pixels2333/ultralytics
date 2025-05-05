@@ -2,9 +2,10 @@ from ultralytics import YOLO
 
 # Load a model
 # model = YOLO("yolo11n-cls.pt")  # load a pretrained model (recommended for training)
-# model = YOLO("ultralytics\\cfg\\models\\11\\myyolo.yaml")
-model = YOLO("ultralytics\\cfg\\models\\11\\myyolo.yaml").load(
-    "yolo11n.pt")  # build from YAML and transfer weights
+# model = YOLO("ultralytics\\cfg\\models\\11\\myyolo.yaml", task="classification")
+model = YOLO("ultralytics\\cfg\\models\\11\\yolo_cnn.yaml", task="classify").load(
+    "yolo11n-cls.pt")  # 从 YAML 配置文件中构建模型，并加载预训练权重
+
 
 # Train the model
 results = model.train(

@@ -1,20 +1,20 @@
-# 参数设置
-nc: 10  # 番茄分类的类别数量
-scales:  # 模型复合缩放常数
-  n: [0.50, 0.25, 1024]  # 轻量级模型
-  s: [0.50, 0.50, 1024]  # 小型模型
-  m: [0.67, 0.75, 768]   # 中型模型
-  l: [1.00, 1.00, 512]   # 大型模型
+# yolo_cnn.yaml (修正版本)
+task: classify  # 明确指定任务类型
+nc: 10  # 类别数量，例如 MNIST 是 10 类
 
-# 主干网络
+# 模型架构
 backbone:
-  # [from, repeats, module, args]
-  - [-1, 1, Conv, [32, 3, 1]]  # 0: 单一卷积层，输出32个特征图，3x3卷积，步幅1
-  - [-1, 1, nn.ReLU, []]       # 1: ReLU激活函数
-  - [-1, 1, nn.MaxPool2d, [2]] # 2: 最大池化层，2x2池化
-  # - [-1, 1, nn.Flatten, []]    # 3: 展平层
-  - [-1, 1, nn.Linear, [256, nc]]  # 4: 全连接层，输入256，输出nc个类别
+  # [from, number, module, args]
+  - [-1, 1, Conv, [32, 3, 1]]  # 0: 卷积层
+  - [-1, 1, nn.ReLU, [True]]   # 1: ReLU 激活函数
+  - [-1, 1, nn.MaxPool2d, [2]] # 2: 最大池化层
+  - [-1, 1, nn.Flatten, []]     # 3: 展平层
 
-# 分类头部
+# 全连接层
 head:
-  - [-1, 1, nn.LogSoftmax, [1]]  # 5: LogSoftmax激活函数
+  - [-1, 1, nn.Linear, [401408, 128]]  # 4: 第一个全连接层，输入 256，输出 128
+  - [-1, 1, nn.ReLU, [True]]        # 5: ReLU 激活函数
+  - [-1, 1, nn.Linear, [128, nc]]   # 6: 第二个全连接层，输入 128，输出类别数（10）
+
+  # 输出层，通常在分类任务中最后使用 Softmax 或 LogSoftmax 激活函数
+  - [-1, 1, nn.LogSoftmax, [1]]    # 7: LogSoftmax 激活函数
